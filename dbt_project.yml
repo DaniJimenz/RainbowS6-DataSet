@@ -2,7 +2,7 @@
 # Name your project! Project names should contain only lowercase characters
 # and underscores. A good package name should reflect your organization's
 # name or the intended use of these models
-name: 'my_new_project'
+name: 'r6s_project'
 version: '1.0.0'
 config-version: 2
 
@@ -36,7 +36,44 @@ clean-targets:         # directories to be removed by `dbt clean`
 # using the `{{ config(...) }}` macro.
 
 models:
-  my_new_project:
-    # Applies to all files under models/example/
-    example:
+  r6s_balance:
+    # Tablas normales (no transient): Para conservar Time Travel y Fail-safe
+    +transient: false
+    # Staging: renombrar y castear, 1:1 con Bronze.
+    # Vistas: no ocupan espacio y siempre reflejan Bronze.
+    staging:
+      +materialized: view
+      +database: "{{ env_var('DBT_SILVER_DB') }}"
+      +tags: ['staging']
+      ubisoft_r6s:
+        +schema: ubisoft_r6s
+
+    # Silver: limpieza, deduplicación y reglas de calidad.
+    # Tablas: la deduplicación de 2M de filas no se repite en cada consulta.
+    silver:
       +materialized: table
+      +database: "{{ env_var('DBT_SILVER_DB') }}"
+      +tags: ['silver']
+      ubisoft_r6s:
+        +schema: ubisoft_r6s
+
+    # Gold: modelo dimensional y marts de negocio.
+    gold:
+      +materialized: table
+      +database: "{{ env_var('DBT_GOLD_DB') }}"
+      +tags: ['gold']
+
+      # Lógica de apoyo que no se expone a negocio
+      intermediate:
+        +materialized: view
+        +schema: intermediate
+
+      # Dominio de negocio: balance del juego
+      game_balance:
+        +schema: game_balance
+        +tags: ['game_balance']
+        +grants:
+          select: ['REPORTING_ROLE']
+        +meta:
+          owner: equipo-disenio-juego
+    
