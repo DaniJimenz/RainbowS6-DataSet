@@ -1,0 +1,98 @@
+version: 2
+
+sources:
+  - name: ubisoft_r6s
+    description: Columnas como texto
+    database: "{{ env_var('DBT_BRONZE_DB') }}"
+    schema: ubisoft_r6s
+
+    tables:
+      - name: player_rounds
+        description: Una fila = un jugador en una ronda. La ronda se identifica por dateid + matchid + roundnumber
+        columns:
+          - name: dateid
+            description: Fecha de la partida en formato YYYYMMDD.
+            data_tests:
+              - not_null
+
+          - name: gamemode
+            description: Modo de juego
+            data_tests:
+              - accepted_values:
+                  arguments:
+                    values: ['SECURE_AREA', 'BOMB', 'HOSTAGE']
+
+          - name: mapname
+            description: Mapa en el que se juega la partida.
+            data_tests:
+              - not_null
+
+          - name: matchid
+            description: Identificador de la partida. No es único por sí solo.
+            data_tests:
+              - not_null
+
+          - name: roundnumber
+            description: Número de ronda dentro de la partida.
+            data_tests:
+              - not_null
+
+          - name: objectivelocation
+            description: Objetivo en el mapa
+
+          - name: winrole
+            description: Bando que ganó la ronda.
+            data_tests:
+              - accepted_values:
+                  arguments:
+                    values: ['Attacker', 'Defender']
+
+          - name: endroundreason
+            description: Motivo por el que terminó la ronda.
+
+          - name: roundduration
+            description: Duración de la ronda en segundos. Tiene valores anómalos.
+
+          - name: skillrank
+            description: Rango del jugador (no de la partida). Incluye Unranked.
+
+          - name: role
+            description: Bando del jugador en la ronda.
+            data_tests:
+              - accepted_values:
+                  arguments:
+                    values: ['Attacker', 'Defender']
+
+          - name: team
+            description: Equipo del jugador (0 o 1).
+
+          - name: haswon
+            description: 1 si el jugador ganó la ronda, 0 si no.
+            data_tests:
+              - accepted_values:
+                  arguments:
+                    values: ['0', '1']
+
+          - name: operator
+            description: Unidad y operador, separados por guion (p. ej. GIGN-ROOK).
+            data_tests:
+              - not_null
+
+          - name: nbkills
+            description: Bajas conseguidas por el jugador en la ronda.
+
+          - name: isdead
+            description: 1 si el jugador murió en la ronda, 0 si sobrevivió.
+            data_tests:
+              - accepted_values:
+                  arguments:
+                    values: ['0', '1']
+
+          - name: _source_file
+            description: Fichero del stage del que viene la fila (metadato de carga).
+
+          - name: _source_row_number
+            description: Número de línea dentro del fichero (metadato de carga).
+
+          - name: _loaded_at
+            description: Momento en que la fila se cargó en Bronze (metadato de carga).
