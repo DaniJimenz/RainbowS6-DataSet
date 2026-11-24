@@ -4,11 +4,11 @@ with player_rounds as (
 
 ),
 
-aggregated as (
+rounds as (
 
+    -- Una fila por ronda. Se agrupa por todos los atributos de la ronda: si alguno
+    -- variase entre jugadores saldrían varias filas por round_id y el test unique fallaría.
     select
-        -- Atributos de la ronda
-        -- Si alguno varia saldrían varias filas por round_id y el test unique fallaría.
           round_id
         , match_date
         , match_id
@@ -30,6 +30,17 @@ aggregated as (
     from player_rounds
     group by all
 
+),
+
+final as (
+
+    select
+          *
+        , round_duration_seconds between {{ var('min_valid_round_duration_seconds') }}
+                                     and {{ var('max_valid_round_duration_seconds') }}
+                                                            as is_valid_duration
+    from rounds
+
 )
 
-select * from aggregated
+select * from final

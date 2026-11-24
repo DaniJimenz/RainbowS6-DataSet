@@ -7,9 +7,8 @@ with player_rounds as (
 final as (
 
     select
-        -- Clave de la fila ( No hay ID de jugador ) se usa el origen
-        -- (fichero + línea) lo único único por fila
-          {{ dbt_utils.generate_surrogate_key(['source_file_name', 'source_row_number']) }} as player_round_id
+        -- Clave de la fila (generada en Silver)
+          player_round_id
 
         -- Claves foráneas
         , round_id

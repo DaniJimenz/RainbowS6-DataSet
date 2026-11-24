@@ -7,8 +7,13 @@ with player_rounds as (
 enriched as (
 
     select
+        -- Clave de la fila: no hay ID de jugador en origen, así que se usa
+        -- fichero + línea, lo único que identifica cada fila
+          {{ dbt_utils.generate_surrogate_key(['source_file_name', 'source_row_number']) }}
+                                                        as player_round_id
+
         -- Clave de la ronda (match_id solo no es único)
-          {{ dbt_utils.generate_surrogate_key(['match_date', 'match_id', 'round_number']) }}
+        , {{ dbt_utils.generate_surrogate_key(['match_date', 'match_id', 'round_number']) }}
                                                         as round_id
         , match_date
         , match_id
@@ -21,7 +26,6 @@ enriched as (
         , winning_role
         , end_round_reason
         , round_duration_seconds
-        , round_duration_seconds between 20 and 600     as is_valid_duration
 
         -- Rango del jugador
         , skill_rank
@@ -62,7 +66,7 @@ deduplicated as (
     qualify is_recruit
          or row_number() over (
                 partition by round_id, team_number, operator_code
-                order by source_row_number
+                order by source_file_name, source_row_number
             ) = 1
 
 )

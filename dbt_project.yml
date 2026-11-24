@@ -37,8 +37,8 @@ clean-targets:         # directories to be removed by `dbt clean`
 
 models:
   r6s_balance:
-    # Tablas normales (no transient): Para conservar Time Travel y Fail-safe
-    +transient: false
+    # Silver y Gold se reconstruyen desde Bronze en cada ejecución: tablas transient
+    # (valor por defecto de dbt-snowflake), sin coste de Fail-safe por cada recreación.
     # Staging: renombrar y castear, 1:1 con Bronze.
     # Vistas: no ocupan espacio y siempre reflejan Bronze.
     staging:
@@ -62,11 +62,6 @@ models:
       +materialized: table
       +database: "{{ env_var('DBT_GOLD_DB') }}"
       +tags: ['gold']
-
-      # Lógica de apoyo que no se expone a negocio
-      intermediate:
-        +materialized: view
-        +schema: intermediate
 
       # Dominio de negocio: balance del juego
       game_balance:
@@ -94,7 +89,11 @@ vars:
   velvet_shell_operators: ['JACKAL', 'MIRA']
   # mínimo de rondas para considerar fiable el win rate de un operador
   min_player_rounds_for_balance: 1000
-  # diferencia ( en % ) frente a la media del bando para marcar desequilibrio
+  # diferencia mínima (en puntos) frente a la referencia para marcar desequilibrio;
+  # además la diferencia tiene que ser estadísticamente significativa (macro balance_status)
   balance_threshold_pp: 2
   # Mínimo de rondas para considerar fiable el balance de un objetivo
   min_rounds_for_map_balance: 500
+  # Duración de ronda válida (segundos); fuera de este rango se considera anómala
+  min_valid_round_duration_seconds: 20
+  max_valid_round_duration_seconds: 600

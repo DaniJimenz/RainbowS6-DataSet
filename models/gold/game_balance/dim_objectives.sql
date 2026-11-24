@@ -1,6 +1,6 @@
-with player_rounds as (
+with rounds as (
 
-    select * from {{ ref('slv_ubisoft_r6s__player_rounds') }}
+    select * from {{ ref('slv_ubisoft_r6s__rounds') }}
 
 ),
 
@@ -10,7 +10,7 @@ objectives as (
           map_name
         , game_mode
         , objective_location
-    from player_rounds
+    from rounds
 
 ),
 
