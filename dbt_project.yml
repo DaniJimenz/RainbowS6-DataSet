@@ -77,3 +77,16 @@ models:
         +meta:
           owner: equipo-disenio-juego
     
+seeds:
+  r6s_balance:
+    +database: "{{ env_var('DBT_SILVER_DB') }}"
+    +schema: seeds
+    skill_rank_groups:
+      +column_types:
+        skill_rank_group: varchar(20)
+        rank_order: integer
+        is_ranked: boolean
+
+vars:
+  # Operadores lanzados en la temporada del dataset (Velvet Shell, Y2S1)
+  velvet_shell_operators: ['JACKAL', 'MIRA']

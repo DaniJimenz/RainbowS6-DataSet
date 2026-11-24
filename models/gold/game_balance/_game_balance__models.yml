@@ -1,0 +1,70 @@
+version: 2
+
+models:
+  - name: dim_skill_ranks
+    description: Dimensión de grupos de rango, con su orden. Una fila = un grupo de rango.
+    columns:
+      - name: skill_rank_key
+        description: Clave subrogada del grupo de rango.
+        data_tests:
+          - unique
+          - not_null
+      - name: skill_rank_group
+        description: Grupo de rango (Copper, Bronze, Silver, Gold, Platinum+, Unranked).
+        data_tests:
+          - unique
+          - not_null
+      - name: rank_order
+        description: Orden de menor a mayor rango. Unranked = 0.
+      - name: is_ranked
+        description: False solo para Unranked.
+
+  - name: dim_operators
+    description: >
+      Dimensión de operadores. Una fila = un operador en un bando
+      (los reclutas aparecen como atacante y como defensor).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['operator_code', 'player_role']
+    columns:
+      - name: operator_key
+        description: Clave subrogada (operator_code + player_role).
+        data_tests:
+          - unique
+          - not_null
+      - name: operator_code
+        description: Código de origen (p. ej. GIGN-ROOK).
+      - name: operator_name
+        description: Nombre del operador (p. ej. ROOK). RESERVE = recluta.
+      - name: operator_unit
+        description: Unidad (p. ej. GIGN).
+      - name: player_role
+        description: Bando del operador.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Attacker', 'Defender']
+      - name: is_recruit
+        description: True si es un recluta (RESERVE).
+      - name: is_velvet_shell_operator
+        description: True si el operador se lanzó en Velvet Shell (variable velvet_shell_operators).
+
+  - name: dim_objectives
+    description: Dimensión de objetivos. Una fila = un objetivo de un mapa en un modo de juego.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['map_name', 'game_mode', 'objective_location']
+    columns:
+      - name: objective_key
+        description: Clave subrogada (map_name + game_mode + objective_location).
+        data_tests:
+          - unique
+          - not_null
+      - name: map_name
+        description: Mapa.
+      - name: game_mode
+        description: Modo de juego.
+      - name: objective_location
+        description: Objetivo dentro del mapa.

@@ -1,0 +1,20 @@
+version: 2
+
+seeds:
+  - name: skill_rank_groups
+    description: >
+      Grupos de rango con su orden. El orden no viene en el dato de origen,
+      por eso se mantiene como seed.
+    columns:
+      - name: skill_rank_group
+        description: Grupo de rango, igual que en Silver (Platinum y Diamond = Platinum+).
+        data_tests:
+          - unique
+          - not_null
+      - name: rank_order
+        description: Orden del rango, de menor a mayor. Unranked = 0.
+        data_tests:
+          - unique
+          - not_null
+      - name: is_ranked
+        description: False solo para Unranked.
