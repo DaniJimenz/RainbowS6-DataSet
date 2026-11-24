@@ -94,3 +94,5 @@ vars:
   min_player_rounds_for_balance: 1000
   # diferencia ( en % ) frente a la media del bando para marcar desequilibrio
   balance_threshold_pp: 2
+  # Mínimo de rondas para considerar fiable el balance de un objetivo
+  min_rounds_for_map_balance: 500

@@ -180,3 +180,35 @@ models:
           - accepted_values:
               arguments:
                 values: ['Overperforming', 'Underperforming', 'Balanced', 'Low sample']
+
+  - name: agg_map_balance
+    description: >
+      Caso de uso 2. Balance ataque/defensa por objetivo (mapa + modo + objetivo),
+      más una fila por mapa con todos sus modos ('All modes' / 'All objectives').
+      Compara el % de victorias del ataque con la media global.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['map_name', 'game_mode', 'objective_location']
+    columns:
+      - name: rounds_played
+        description: Rondas jugadas.
+      - name: attacker_win_rate_pct
+        description: Porcentaje de rondas ganadas por el ataque.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 100
+      - name: global_attacker_win_rate_pct
+        description: Porcentaje global de victorias del ataque (referencia).
+      - name: attacker_win_delta_pp
+        description: Puntos por encima (+, favorece al ataque) o por debajo (-, favorece a la defensa) de la media global.
+      - name: avg_round_duration_seconds
+        description: Duración media, solo con rondas de duración válida.
+      - name: balance_status
+        description: Attacker-sided / Defender-sided / Balanced según balance_threshold_pp; Low sample si hay pocas rondas.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Attacker-sided', 'Defender-sided', 'Balanced', 'Low sample']
