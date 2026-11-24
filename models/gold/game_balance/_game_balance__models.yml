@@ -144,3 +144,39 @@ models:
                 min_value: 0
       - name: is_dead
         description: True si el jugador murió en la ronda.
+
+  - name: agg_operator_balance
+    description: >
+      Casos de uso 1 y 3. Balance de operadores por grupo de rango, más una fila
+      'All ranks' por operador. Excluye reclutas y Unranked. Compara el win rate
+      de cada operador con la media de su bando en el mismo rango.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['operator_name', 'player_role', 'skill_rank_group']
+    columns:
+      - name: skill_rank_group
+        description: Grupo de rango, o 'All ranks' para el total del operador.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Copper', 'Bronze', 'Silver', 'Gold', 'Platinum+', 'All ranks']
+      - name: pick_share_pct
+        description: Porcentaje de las elecciones de su bando (en ese rango) que se lleva el operador.
+      - name: win_rate_pct
+        description: Porcentaje de rondas ganadas con el operador.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 100
+      - name: role_win_rate_pct
+        description: Win rate medio de su bando en el mismo rango (referencia).
+      - name: win_rate_delta_pp
+        description: Puntos porcentuales por encima (+) o por debajo (-) de la media de su bando.
+      - name: balance_status
+        description: Overperforming / Underperforming / Balanced según balance_threshold_pp; Low sample si hay pocas rondas.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Overperforming', 'Underperforming', 'Balanced', 'Low sample']

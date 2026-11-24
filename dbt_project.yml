@@ -88,5 +88,9 @@ seeds:
         is_ranked: boolean
 
 vars:
-  # Operadores lanzados en la temporada del dataset (Velvet Shell, Y2S1)
+  # operadores lanzados en la temporada del dataset (Velvet Shell, Y2S1)
   velvet_shell_operators: ['JACKAL', 'MIRA']
+  # mínimo de rondas para considerar fiable el win rate de un operador
+  min_player_rounds_for_balance: 1000
+  # diferencia ( en % ) frente a la media del bando para marcar desequilibrio
+  balance_threshold_pp: 2
