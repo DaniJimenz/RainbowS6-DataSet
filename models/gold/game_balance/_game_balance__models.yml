@@ -1,0 +1,214 @@
+version: 2
+
+models:
+  - name: dim_skill_ranks
+    description: Dimensión de grupos de rango, con su orden. Una fila = un grupo de rango.
+    columns:
+      - name: skill_rank_key
+        description: Clave subrogada del grupo de rango.
+        data_tests:
+          - unique
+          - not_null
+      - name: skill_rank_group
+        description: Grupo de rango (Copper, Bronze, Silver, Gold, Platinum+, Unranked).
+        data_tests:
+          - unique
+          - not_null
+      - name: rank_order
+        description: Orden de menor a mayor rango. Unranked = 0.
+      - name: is_ranked
+        description: False solo para Unranked.
+
+  - name: dim_operators
+    description: >
+      Dimensión de operadores. Una fila = un operador en un bando
+      (los reclutas aparecen como atacante y como defensor).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['operator_code', 'player_role']
+    columns:
+      - name: operator_key
+        description: Clave subrogada (operator_code + player_role).
+        data_tests:
+          - unique
+          - not_null
+      - name: operator_code
+        description: Código de origen (p. ej. GIGN-ROOK).
+      - name: operator_name
+        description: Nombre del operador (p. ej. ROOK). RESERVE = recluta.
+      - name: operator_unit
+        description: Unidad (p. ej. GIGN).
+      - name: player_role
+        description: Bando del operador.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Attacker', 'Defender']
+      - name: is_recruit
+        description: True si es un recluta (RESERVE).
+      - name: is_velvet_shell_operator
+        description: True si el operador se lanzó en Velvet Shell (variable velvet_shell_operators).
+
+  - name: dim_objectives
+    description: Dimensión de objetivos. Una fila = un objetivo de un mapa en un modo de juego.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['map_name', 'game_mode', 'objective_location']
+    columns:
+      - name: objective_key
+        description: Clave subrogada (map_name + game_mode + objective_location).
+        data_tests:
+          - unique
+          - not_null
+      - name: map_name
+        description: Mapa.
+      - name: game_mode
+        description: Modo de juego.
+      - name: objective_location
+        description: Objetivo dentro del mapa.
+
+  - name: fct_rounds
+    description: Hechos de rondas. Una fila = una ronda.
+    columns:
+      - name: round_id
+        description: Clave de la ronda.
+        data_tests:
+          - unique
+          - not_null
+      - name: objective_key
+        description: Clave foránea a dim_objectives.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_objectives')
+                field: objective_key
+      - name: winning_role
+        description: Bando ganador.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Attacker', 'Defender']
+      - name: is_attacker_win
+        description: True si ganó el ataque.
+      - name: round_duration_seconds
+        description: Duración de la ronda (máxima entre jugadores).
+      - name: is_valid_duration
+        description: True si la duración está entre 20 s y 10 min.
+      - name: players_count
+        description: Jugadores registrados en la ronda.
+
+  - name: fct_player_rounds
+    description: >
+      Hechos de jugador en ronda. Una fila = un jugador en una ronda.
+      Sin ID de jugador en origen: la clave se genera con fichero + línea de origen.
+    columns:
+      - name: player_round_id
+        description: Clave de la fila (hash de source_file_name + source_row_number).
+        data_tests:
+          - unique
+          - not_null
+      - name: round_id
+        description: Clave foránea a fct_rounds.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_rounds')
+                field: round_id
+      - name: operator_key
+        description: Clave foránea a dim_operators.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_operators')
+                field: operator_key
+      - name: skill_rank_key
+        description: Clave foránea a dim_skill_ranks.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_skill_ranks')
+                field: skill_rank_key
+      - name: has_won
+        description: True si el jugador ganó la ronda.
+      - name: kills
+        description: Bajas del jugador en la ronda.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: is_dead
+        description: True si el jugador murió en la ronda.
+
+  - name: agg_operator_balance
+    description: >
+      Casos de uso 1 y 3. Balance de operadores por grupo de rango, más una fila
+      'All ranks' por operador. Excluye reclutas y Unranked. Compara el win rate
+      de cada operador con la media de su bando en el mismo rango.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['operator_name', 'player_role', 'skill_rank_group']
+    columns:
+      - name: skill_rank_group
+        description: Grupo de rango, o 'All ranks' para el total del operador.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Copper', 'Bronze', 'Silver', 'Gold', 'Platinum+', 'All ranks']
+      - name: pick_share_pct
+        description: Porcentaje de las elecciones de su bando (en ese rango) que se lleva el operador.
+      - name: win_rate_pct
+        description: Porcentaje de rondas ganadas con el operador.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 100
+      - name: role_win_rate_pct
+        description: Win rate medio de su bando en el mismo rango (referencia).
+      - name: win_rate_delta_pp
+        description: Puntos porcentuales por encima (+) o por debajo (-) de la media de su bando.
+      - name: balance_status
+        description: Overperforming / Underperforming / Balanced según balance_threshold_pp; Low sample si hay pocas rondas.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Overperforming', 'Underperforming', 'Balanced', 'Low sample']
+
+  - name: agg_map_balance
+    description: >
+      Caso de uso 2. Balance ataque/defensa por objetivo (mapa + modo + objetivo),
+      más una fila por mapa con todos sus modos ('All modes' / 'All objectives').
+      Compara el % de victorias del ataque con la media global.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['map_name', 'game_mode', 'objective_location']
+    columns:
+      - name: rounds_played
+        description: Rondas jugadas.
+      - name: attacker_win_rate_pct
+        description: Porcentaje de rondas ganadas por el ataque.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 100
+      - name: global_attacker_win_rate_pct
+        description: Porcentaje global de victorias del ataque (referencia).
+      - name: attacker_win_delta_pp
+        description: Puntos por encima (+, favorece al ataque) o por debajo (-, favorece a la defensa) de la media global.
+      - name: avg_round_duration_seconds
+        description: Duración media, solo con rondas de duración válida.
+      - name: balance_status
+        description: Attacker-sided / Defender-sided / Balanced según balance_threshold_pp; Low sample si hay pocas rondas.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Attacker-sided', 'Defender-sided', 'Balanced', 'Low sample']

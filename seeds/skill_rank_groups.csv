@@ -1,0 +1,7 @@
+skill_rank_group,rank_order,is_ranked
+Unranked,0,false
+Copper,1,true
+Bronze,2,true
+Silver,3,true
+Gold,4,true
+Platinum+,5,true

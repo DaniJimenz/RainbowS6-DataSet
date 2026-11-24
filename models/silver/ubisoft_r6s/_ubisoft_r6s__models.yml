@@ -3,12 +3,13 @@ version: 2
 models:
   - name: slv_ubisoft_r6s__player_rounds
     description: >
-      un jugador en una ronda, limpio. Elimina los 48 duplicados reales
+      Una fila = un jugador en una ronda, limpio. Elimina los 48 duplicados reales
       (mismo operador dos veces en el mismo equipo y ronda), separa el operador en
-      unidad y nombre, agrupa rangos y marca reclutas, Unranked y duraciones sin sentido.
+      unidad y nombre, agrupa rangos y marca reclutas, Unranked y duraciones anómalas.
+      Marca, no filtra: los filtros de negocio se aplican en Gold.
 
     data_tests:
-      #  ( Grano ) un operador normal, una vez por equipo y ronda
+      # Grano: un operador normal, una vez por equipo y ronda
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns: ['round_id', 'team_number', 'operator_code']
@@ -35,12 +36,12 @@ models:
         description: False si el jugador es Unranked.
 
       - name: operator_unit
-        description: Unidad del operador ej.GIGN
+        description: Unidad del operador (p. ej. GIGN).
         data_tests:
           - not_null
 
       - name: operator_name
-        description: Nombre del operador ej.ROOK RESERVE = recluta.
+        description: Nombre del operador (p. ej. ROOK). RESERVE = recluta.
         data_tests:
           - not_null
 
