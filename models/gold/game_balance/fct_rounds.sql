@@ -1,6 +1,6 @@
 with rounds as (
 
-    select * from {{ ref('int_rounds__aggregated') }}
+    select * from {{ ref('slv_ubisoft_r6s__rounds') }}
 
 ),
 
@@ -23,7 +23,7 @@ final as (
 
         -- Duración
         , round_duration_seconds
-        , round_duration_seconds between 20 and 600         as is_valid_duration
+        , is_valid_duration
 
         -- Jugadores
         , players_count

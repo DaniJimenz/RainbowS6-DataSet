@@ -39,6 +39,8 @@ sources:
 
           - name: objectivelocation
             description: Objetivo en el mapa
+            data_tests:
+              - not_null
 
           - name: winrole
             description: Bando que ganó la ronda.

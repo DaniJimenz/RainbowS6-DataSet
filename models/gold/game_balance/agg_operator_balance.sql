@@ -1,5 +1,4 @@
 {%- set min_rounds = var('min_player_rounds_for_balance') -%}
-{%- set threshold  = var('balance_threshold_pp') -%}
 
 with player_rounds as (
 
@@ -81,6 +80,16 @@ benchmarked as (
 
 ),
 
+with_margin as (
+
+    select
+          *
+        , round(win_rate_pct - role_win_rate_pct, 2)                              as win_rate_delta_pp
+        , round({{ balance_margin_pp('role_win_rate_pct', 'player_rounds') }}, 2)  as balance_margin_pp
+    from benchmarked
+
+),
+
 final as (
 
     select
@@ -94,19 +103,21 @@ final as (
         , pick_share_pct
         , win_rate_pct
         , role_win_rate_pct
-        , round(win_rate_pct - role_win_rate_pct, 2) as win_rate_delta_pp
-        , rank() over ( partition by player_role, skill_rank_group order by win_rate_pct - role_win_rate_pct desc )                                             as balance_rank_in_role
+        , win_rate_delta_pp
+        , balance_margin_pp
+        , rank() over (partition by player_role, skill_rank_group order by win_rate_delta_pp desc)
+                                                        as balance_rank_in_role
         , survival_rate_pct
         , avg_kills
         , kd_ratio
-        , player_rounds < {{ min_rounds }} as is_low_sample
+        , player_rounds < {{ min_rounds }}              as is_low_sample
         , case
-              when player_rounds < {{ min_rounds }}                        then 'Low sample'
-              when win_rate_pct - role_win_rate_pct >=  {{ threshold }}    then 'Overperforming'
-              when win_rate_pct - role_win_rate_pct <= -{{ threshold }}    then 'Underperforming'
+              when player_rounds < {{ min_rounds }}             then 'Low sample'
+              when win_rate_delta_pp >=  balance_margin_pp      then 'Overperforming'
+              when win_rate_delta_pp <= -balance_margin_pp      then 'Underperforming'
               else 'Balanced'
           end                                           as balance_status
-    from benchmarked
+    from with_margin
 
 )
 

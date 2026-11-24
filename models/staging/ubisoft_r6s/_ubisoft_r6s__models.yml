@@ -17,6 +17,8 @@ models:
 
       - name: round_number
         description: Número de ronda dentro de la partida.
+        data_tests:
+          - not_null
 
       - name: game_mode
         description: Modo de juego (SECURE_AREA, BOMB, HOSTAGE).
@@ -35,6 +37,8 @@ models:
 
       - name: round_duration_seconds
         description: Duración de la ronda en segundos. Sin limpiar (hay valores anómalos).
+        data_tests:
+          - not_null
 
       - name: skill_rank
         description: Rango del jugador. Incluye Unranked.
@@ -44,6 +48,8 @@ models:
 
       - name: team_number
         description: Equipo del jugador (0 o 1).
+        data_tests:
+          - not_null
 
       - name: operator_code
         description: Unidad y operador tal como vienen en origen (p. ej. GIGN-ROOK).
@@ -56,6 +62,7 @@ models:
       - name: kills
         description: Bajas conseguidas por el jugador en la ronda.
         data_tests:
+          - not_null
           - dbt_utils.accepted_range:
               arguments:
                 min_value: 0

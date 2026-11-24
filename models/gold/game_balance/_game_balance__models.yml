@@ -96,14 +96,14 @@ models:
       - name: round_duration_seconds
         description: Duración de la ronda (máxima entre jugadores).
       - name: is_valid_duration
-        description: True si la duración está entre 20 s y 10 min.
+        description: True si la duración está en el rango válido (variables min/max_valid_round_duration_seconds).
       - name: players_count
         description: Jugadores registrados en la ronda.
 
   - name: fct_player_rounds
     description: >
       Hechos de jugador en ronda. Una fila = un jugador en una ronda.
-      Sin ID de jugador en origen: la clave se genera con fichero + línea de origen.
+      Sin ID de jugador en origen: la clave viene de Silver (fichero + línea de origen).
     columns:
       - name: player_round_id
         description: Clave de la fila (hash de source_file_name + source_row_number).
@@ -176,8 +176,14 @@ models:
         description: Win rate medio de su bando en el mismo rango (referencia).
       - name: win_rate_delta_pp
         description: Puntos porcentuales por encima (+) o por debajo (-) de la media de su bando.
+      - name: balance_margin_pp
+        description: >
+          Margen que tiene que superar win_rate_delta_pp para marcar desequilibrio: el mayor entre
+          balance_threshold_pp y el margen de error al 95 % para su número de rondas (macro balance_margin_pp).
       - name: balance_status
-        description: Overperforming / Underperforming / Balanced según balance_threshold_pp; Low sample si hay pocas rondas.
+        description: >
+          Overperforming / Underperforming si la diferencia supera balance_margin_pp; Balanced si no;
+          Low sample si hay menos de min_player_rounds_for_balance rondas.
         data_tests:
           - accepted_values:
               arguments:
@@ -185,9 +191,10 @@ models:
 
   - name: agg_map_balance
     description: >
-      Caso de uso 2. Balance ataque/defensa por objetivo (mapa + modo + objetivo),
-      más una fila por mapa con todos sus modos ('All modes' / 'All objectives').
-      Compara el % de victorias del ataque con la media global.
+      Caso de uso 2. Balance ataque/defensa en tres niveles: objetivo (mapa + modo + objetivo),
+      mapa + modo ('All objectives') y mapa ('All modes' / 'All objectives').
+      Compara el % de victorias del ataque con el esperado según el modo de juego,
+      porque el modo influye mucho (HOSTAGE favorece a la defensa).
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -202,14 +209,20 @@ models:
               arguments:
                 min_value: 0
                 max_value: 100
-      - name: global_attacker_win_rate_pct
-        description: Porcentaje global de victorias del ataque (referencia).
+      - name: expected_attacker_win_rate_pct
+        description: >
+          Referencia: % de victorias del ataque en el modo de juego. En la fila de mapa ('All modes')
+          es la media ponderada por las rondas de cada modo.
       - name: attacker_win_delta_pp
-        description: Puntos por encima (+, favorece al ataque) o por debajo (-, favorece a la defensa) de la media global.
+        description: Puntos por encima (+, favorece al ataque) o por debajo (-, favorece a la defensa) de la referencia.
+      - name: balance_margin_pp
+        description: Margen que tiene que superar attacker_win_delta_pp para marcar desequilibrio (macro balance_margin_pp).
       - name: avg_round_duration_seconds
         description: Duración media, solo con rondas de duración válida.
       - name: balance_status
-        description: Attacker-sided / Defender-sided / Balanced según balance_threshold_pp; Low sample si hay pocas rondas.
+        description: >
+          Attacker-sided / Defender-sided si la diferencia supera balance_margin_pp; Balanced si no;
+          Low sample si hay menos de min_rounds_for_map_balance rondas.
         data_tests:
           - accepted_values:
               arguments:

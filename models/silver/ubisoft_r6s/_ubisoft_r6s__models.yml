@@ -5,8 +5,9 @@ models:
     description: >
       Una fila = un jugador en una ronda, limpio. Elimina los 48 duplicados reales
       (mismo operador dos veces en el mismo equipo y ronda), separa el operador en
-      unidad y nombre, agrupa rangos y marca reclutas, Unranked y duraciones anómalas.
-      Marca, no filtra: los filtros de negocio se aplican en Gold.
+      unidad y nombre, agrupa rangos y marca reclutas y Unranked.
+      Los reclutas repetidos no se eliminan: ningún equipo pasa de 5 jugadores, así que
+      son jugadores distintos con las mismas estadísticas. Marca, no filtra: los filtros de negocio se aplican en Gold.
 
     data_tests:
       # Grano: un operador normal, una vez por equipo y ronda
@@ -17,13 +18,16 @@ models:
             where: "not is_recruit"
 
     columns:
+      - name: player_round_id
+        description: Clave de la fila (hash de source_file_name + source_row_number). Sin ID de jugador en origen.
+        data_tests:
+          - unique
+          - not_null
+
       - name: round_id
         description: Clave de la ronda (hash de match_date + match_id + round_number).
         data_tests:
           - not_null
-
-      - name: is_valid_duration
-        description: True si la duración está entre 20 s y 10 min.
 
       - name: skill_rank_group
         description: Rango agrupado; Platinum y Diamond se unen en Platinum+.
@@ -47,3 +51,26 @@ models:
 
       - name: is_recruit
         description: True si el jugador usa un recluta (RESERVE).
+
+  - name: slv_ubisoft_r6s__rounds
+    description: >
+      Una fila = una ronda. Se obtiene de player_rounds, donde los atributos de la ronda
+      vienen repetidos en cada jugador. Agrupa por todos ellos: si no fueran coherentes
+      entre jugadores, round_id se repetiría y fallaría el test unique.
+    columns:
+      - name: round_id
+        description: Clave de la ronda.
+        data_tests:
+          - unique
+          - not_null
+
+      - name: round_duration_seconds
+        description: Duración de la ronda (máxima entre jugadores; varía ~1 s entre ellos).
+
+      - name: is_valid_duration
+        description: >
+          True si la duración está entre min_valid_round_duration_seconds y
+          max_valid_round_duration_seconds (por defecto 20 s y 10 min).
+
+      - name: players_count
+        description: Jugadores registrados en la ronda.
