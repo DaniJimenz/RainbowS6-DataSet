@@ -74,6 +74,8 @@ models:
         +tags: ['game_balance']
         +grants:
           select: ['REPORTING_ROLE']
+        +post-hook:
+          - "grant usage on schema {{ this.database }}.{{ this.schema }} to role REPORTING_ROLE"
         +meta:
           owner: equipo-disenio-juego
     
