@@ -95,6 +95,7 @@ final as (
         , win_rate_pct
         , role_win_rate_pct
         , round(win_rate_pct - role_win_rate_pct, 2) as win_rate_delta_pp
+        , rank() over ( partition by player_role, skill_rank_group order by win_rate_pct - role_win_rate_pct desc )                                             as balance_rank_in_role
         , survival_rate_pct
         , avg_kills
         , kd_ratio

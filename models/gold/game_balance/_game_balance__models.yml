@@ -155,6 +155,8 @@ models:
           arguments:
             combination_of_columns: ['operator_name', 'player_role', 'skill_rank_group']
     columns:
+      - name: balance_rank_in_role
+        description: Posición del operador en su bando y rango según win_rate_delta_pp (1 = el que más rinde por encima de la media).
       - name: skill_rank_group
         description: Grupo de rango, o 'All ranks' para el total del operador.
         data_tests:
