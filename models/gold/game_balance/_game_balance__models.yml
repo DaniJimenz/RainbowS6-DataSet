@@ -68,3 +68,79 @@ models:
         description: Modo de juego.
       - name: objective_location
         description: Objetivo dentro del mapa.
+
+  - name: fct_rounds
+    description: Hechos de rondas. Una fila = una ronda.
+    columns:
+      - name: round_id
+        description: Clave de la ronda.
+        data_tests:
+          - unique
+          - not_null
+      - name: objective_key
+        description: Clave foránea a dim_objectives.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_objectives')
+                field: objective_key
+      - name: winning_role
+        description: Bando ganador.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Attacker', 'Defender']
+      - name: is_attacker_win
+        description: True si ganó el ataque.
+      - name: round_duration_seconds
+        description: Duración de la ronda (máxima entre jugadores).
+      - name: is_valid_duration
+        description: True si la duración está entre 20 s y 10 min.
+      - name: players_count
+        description: Jugadores registrados en la ronda.
+
+  - name: fct_player_rounds
+    description: >
+      Hechos de jugador en ronda. Una fila = un jugador en una ronda.
+      Sin ID de jugador en origen: la clave se genera con fichero + línea de origen.
+    columns:
+      - name: player_round_id
+        description: Clave de la fila (hash de source_file_name + source_row_number).
+        data_tests:
+          - unique
+          - not_null
+      - name: round_id
+        description: Clave foránea a fct_rounds.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_rounds')
+                field: round_id
+      - name: operator_key
+        description: Clave foránea a dim_operators.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_operators')
+                field: operator_key
+      - name: skill_rank_key
+        description: Clave foránea a dim_skill_ranks.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_skill_ranks')
+                field: skill_rank_key
+      - name: has_won
+        description: True si el jugador ganó la ronda.
+      - name: kills
+        description: Bajas del jugador en la ronda.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: is_dead
+        description: True si el jugador murió en la ronda.
